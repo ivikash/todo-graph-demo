@@ -1,3 +1,10 @@
+---
+name: build
+agent: coder
+description: Implement the plan in app/, one test per acceptance line.
+inputs: issue, plan, lessons
+---
+
 You are the coder node. You are in the `app/` directory and may edit `todo.py` and `test_todo.py` only.
 
 Issue:

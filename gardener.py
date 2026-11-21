@@ -19,13 +19,26 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 PROPOSALS = ROOT / "proposals"
+sys.path.insert(0, str(ROOT))
+from agents import load as load_agents  # noqa: E402
+
+AGENT_TEMPLATE = """---
+name: {name}
+description: {description}
+tools: {tools}
+model: default
+---
+
+{body}
+"""
 
 # What a repeated lesson tag turns into. "prose" = patch a prompt. "node" = a new agent + node,
 # i.e. the graph grows a new worker; that is the "agents build agents" step.
 CATALOG = {
     "untested-acceptance-line": {
         "kind": "node",
-        "agent": {"name": "spec-checker", "tools": ["read"], "purpose": "map every acceptance line to a named test before any code is written"},
+        "agent": {"name": "spec-checker", "tools": ["read"], "purpose": "map every acceptance line to a named test before any code is written",
+                  "body": "You are the spec-checker. You read, you never edit. Given an issue and a plan, output a checklist with one line per acceptance item in the form `- <acceptance line> -> test_<name>`. Include error paths and copy/aliasing semantics. Output only the checklist."},
         "node": {"name": "spec-check", "after": "plan", "before": "build"},
         "prompt": (
             "You are the spec-check node. Read only.\n\nIssue:\n{{issue}}\n\nPlan:\n{{plan}}\n\n"
@@ -79,12 +92,14 @@ def propose(graph_path=ROOT / "graph.json", runs_dir=ROOT / "runs", lessons=ROOT
 
     if entry["kind"] == "node":
         ag, nd = entry["agent"], entry["node"]
-        graph["agents"][ag["name"]] = {"tools": ag["tools"], "purpose": ag["purpose"]}
+        (out / "agents").mkdir()
+        (out / "agents" / f"{ag['name']}.md").write_text(AGENT_TEMPLATE.format(
+            name=ag["name"], description=ag["purpose"][0].upper() + ag["purpose"][1:] + ".", tools=", ".join(ag["tools"]), body=ag["body"]))
         graph["nodes"][nd["after"]]["next"] = nd["name"]
         graph["nodes"][nd["name"]] = {"agent": ag["name"], "next": nd["before"]}
         (out / "prompts").mkdir()
         (out / "prompts" / f"{nd['name']}.md").write_text(entry["prompt"])
-        report += [f"Change: new agent `{ag['name']}` (tools {ag['tools']}) and new node `{nd['name']}` between `{nd['after']}` and `{nd['before']}`.",
+        report += [f"Change: new agent `{ag['name']}` (tools {ag['tools']}, file agents/{ag['name']}.md) and new node `{nd['name']}` between `{nd['after']}` and `{nd['before']}`.",
                    f"Why: {ag['purpose']}."]
     else:
         (out / "prompts").mkdir()
@@ -99,14 +114,22 @@ def propose(graph_path=ROOT / "graph.json", runs_dir=ROOT / "runs", lessons=ROOT
     return out
 
 
-def check_schema(graph):
+def agents_for(pdir):
+    """Base agents plus the proposal's own agent files layered on top."""
+    agents = load_agents(ROOT / "agents")
+    if (pdir / "agents").is_dir():
+        agents.update(load_agents(pdir / "agents"))
+    return agents
+
+
+def check_schema(graph, agents):
     errs = []
     nodes = graph["nodes"]
     if graph["start"] not in nodes:
         errs.append("start node missing")
     for name, spec in nodes.items():
-        if spec["agent"] not in graph["agents"]:
-            errs.append(f"{name}: unknown agent {spec['agent']}")
+        if spec["agent"] not in agents:
+            errs.append(f"{name}: unknown agent {spec['agent']} (no agents/<name>.md)")
         for k in ("next", "pass", "fail"):
             tgt = spec.get(k)
             if tgt is not None and tgt not in nodes:
@@ -124,12 +147,13 @@ def check_schema(graph):
 
 
 def check_privilege(base, prop):
+    """base and prop are agent dicts (name -> parsed agent file)."""
     errs = []
-    allowed = set(t for a in base["agents"].values() for t in a["tools"])
-    for name, a in prop["agents"].items():
-        if name in base["agents"]:
-            if set(a["tools"]) - set(base["agents"][name]["tools"]):
-                errs.append(f"agent {name} gained tools {set(a['tools']) - set(base['agents'][name]['tools'])}")
+    allowed = set(t for a in base.values() for t in a["tools"])
+    for name, a in prop.items():
+        if name in base:
+            if set(a["tools"]) - set(base[name]["tools"]):
+                errs.append(f"agent {name} gained tools {set(a['tools']) - set(base[name]['tools'])}")
         else:
             if set(a["tools"]) - allowed:
                 errs.append(f"new agent {name} asks for tools nobody has: {set(a['tools']) - allowed}")
@@ -138,7 +162,7 @@ def check_privilege(base, prop):
     return errs
 
 
-def replay(graph_path, prompts_dir, label):
+def replay(graph_path, prompts_dir, label, extra_agents=None):
     """Run every issue through a graph against a fresh copy of app/, fake mode. Returns loops, failures."""
     with tempfile.TemporaryDirectory() as td:
         td = Path(td)
@@ -153,7 +177,8 @@ def replay(graph_path, prompts_dir, label):
         for issue in sorted((ROOT / "issues").glob("*.md")):
             p = subprocess.run([sys.executable, str(ROOT / "run.py"), str(issue), "--fake", "--quiet",
                                 "--graph", str(graph_path), "--app", str(td / "app"), "--runs", str(td / "runs"),
-                                "--lessons", str(td / "lessons.md"), "--prompts", str(td / "prompts")],
+                                "--lessons", str(td / "lessons.md"), "--prompts", str(td / "prompts")]
+                               + (["--extra-agents", str(extra_agents)] if extra_agents else []),
                                capture_output=True, text=True)
             green &= p.returncode == 0
         for r in load_runs(td / "runs"):
@@ -165,16 +190,16 @@ def replay(graph_path, prompts_dir, label):
 
 def validate(proposal_dir):
     pdir = Path(proposal_dir)
-    base = json.loads((ROOT / "graph.json").read_text())
     prop = json.loads((pdir / "graph.json").read_text())
+    base_agents, prop_agents = load_agents(ROOT / "agents"), agents_for(pdir)
     verdicts = []
-    s = check_schema(prop)
+    s = check_schema(prop, prop_agents)
     verdicts.append(("schema", not s, "; ".join(s) or "start reachable, every edge resolves, every node reachable"))
-    p = check_privilege(base, prop)
+    p = check_privilege(base_agents, prop_agents)
     verdicts.append(("least privilege", not p, "; ".join(p) or "no agent gained tools, new agents read-only"))
     print("replaying all issues in fake mode, baseline then proposal:")
     b = replay(ROOT / "graph.json", None, "baseline")
-    n = replay(pdir / "graph.json", pdir / "prompts", "proposal")
+    n = replay(pdir / "graph.json", pdir / "prompts", "proposal", extra_agents=pdir / "agents")
     better = n[2] and n[0] <= b[0] and n[1] <= b[1]
     verdicts.append(("replay", better, f"baseline loops={b[0]} failures={b[1]}; proposal loops={n[0]} failures={n[1]}"))
     ok = all(v[1] for v in verdicts)
@@ -197,8 +222,10 @@ def apply(proposal_dir):
     shutil.copy(pdir / "graph.json", ROOT / "graph.json")
     for p in (pdir / "prompts").glob("*.md"):
         shutil.copy(p, ROOT / "prompts" / p.name)
+    for p in (pdir / "agents").glob("*.md") if (pdir / "agents").is_dir() else []:
+        shutil.copy(p, ROOT / "agents" / p.name)
     (pdir / "APPLIED").touch()
-    print(f"applied {pdir.name}: graph.json and prompts updated (previous graph kept at {pdir.name}/graph.before.json)")
+    print(f"applied {pdir.name}: graph.json, prompts and agents updated (previous graph kept at {pdir.name}/graph.before.json)")
     return 0
 
 

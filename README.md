@@ -2,7 +2,7 @@
 
 A graph of seven agents maintains a small to-do API, and a slower loop grows the graph itself: it reads what went wrong, proposes a new agent, and a script decides whether that agent is allowed in. A human applies the result. In the shipped runs, the proposed agent cut fix loops from 2 to 0 across three issues.
 
-The pattern follows Boris Cherny's claim that loops, not prompts, drive agents ([TechCrunch, 2026-06-22](https://techcrunch.com/2026/06/22/the-ai-world-is-getting-loopy)). Here the unit of control is `graph.json`, 30 lines of data, and 4 of the 7 nodes are agents. The other 3 are plain code, because tests and permission checks are not things a model gets a vote on.
+The pattern follows Boris Cherny's claim that loops, not prompts, drive agents ([TechCrunch, 2026-06-22](https://techcrunch.com/2026/06/22/the-ai-world-is-getting-loopy)). Here the unit of control is data: `graph.json` names the nodes and edges, and every agent is one markdown file in `agents/` with a frontmatter header (name, description, tools, model) and its standing instructions as the body. 4 of the 7 nodes are model agents. The other 3 run a script, because tests and permission checks are not things a model gets a vote on.
 
 ## Demo
 
@@ -40,7 +40,7 @@ Two rows, one per fix loop, each with a date, a one-word tag, what went wrong an
 python3 gardener.py propose
 ```
 
-It counts the lesson tags, picks the tag with the highest count, and writes `proposals/<timestamp>/` with a new `graph.json`, a new prompt and a `report.md`. For the shipped lessons it proposes a read-only agent `spec-checker` and a node `spec-check` between `plan` and `build`. It does not change the live graph.
+It counts the lesson tags, picks the tag with the highest count, and writes `proposals/<timestamp>/` with a new `graph.json`, a new agent file `agents/spec-checker.md`, a new prompt and a `report.md`. For the shipped lessons it proposes the read-only agent `spec-checker` and a node `spec-check` between `plan` and `build`. It does not change the live graph.
 
 **4. Validate the proposal**
 
@@ -56,7 +56,7 @@ Three checks print as a table. Schema: every edge resolves and every node is rea
 python3 gardener.py apply proposals/<timestamp>
 ```
 
-This is the one step the scripts leave to a person. It copies the proposed `graph.json` and prompt into place and keeps the previous graph beside the proposal as `graph.before.json`. Run step 1 again and issue 001 and 003 pass on the first try.
+This is the one step the scripts leave to a person. It copies the proposed `graph.json`, agent file and prompt into place and keeps the previous graph beside the proposal as `graph.before.json`. Run step 1 again and issue 001 and 003 pass on the first try.
 
 **To see the gate refuse something**, validate the hand-made counterexample. It asks for `write` and `deploy` tools and wires `review` out of the graph:
 
@@ -144,7 +144,9 @@ Four loops run at four speeds. Each one edits a different thing, and a different
 | learn | once per run | `lessons.md` (prose) | the scribe |
 | gardener | nightly | the graph itself (`graph.json`, `prompts/`) | the validator, then a human |
 
-A node is one entry in `graph.json`: `{agent, next | pass | fail, max_loops}`. Every agent node runs as a fresh process, so the reviewer judges the diff with no memory of how the coder produced it. The runner node runs `python3 -m unittest` and follows the exit code. The prompt for a node lives in `prompts/<node>.md` and describes the node. The graph decides what happens next.
+A node is one entry in `graph.json`: `{agent, next | pass | fail, max_loops}`. The agent it names is `agents/<name>.md`. Every model agent runs as a fresh process with its file's body as the standing instruction, so the reviewer judges the diff with no memory of how the coder produced it. The runner (`agents/runner.md`, `kind: script`) runs `python3 -m unittest` and follows the exit code. The per-node prompt lives in `prompts/<node>.md`, also with a header (name, agent, inputs). The graph decides what happens next.
+
+Every markdown file in the repo except this README carries that same header shape, so an agent can read any of them the same way: `agents/*.md` are agents, `prompts/*.md` are node prompts, `lessons.md` is memory, the skills under `ports/shared/skills/` are procedures, and the harness instruction files are `kind: instructions`.
 
 ## What the shipped runs show
 
@@ -162,17 +164,19 @@ The gardener read those runs and proposed the `spec-checker` agent and `spec-che
 
 | Path | What it is |
 |---|---|
-| `graph.json` | the graph: agents with their tool sets, nodes, edges (`next`, `pass`, `fail`), `max_loops` |
-| `prompts/<node>.md` | one prompt per node. The runner fills `{{issue}}`, `{{plan}}`, `{{lessons}}`, `{{failure}}` and `{{diff}}` |
+| `graph.json` | the graph: nodes, the agent each one names, edges (`next`, `pass`, `fail`), `max_loops` |
+| `agents/<name>.md` | one agent per file: frontmatter `name`, `description`, `tools` (read, write, run_tests), `model`, optional `kind: script`, then the standing instructions. The single source for `run.py`, the validator and every harness port |
+| `agents.py` | parses those files |
+| `prompts/<node>.md` | one prompt per node, header `name`, `agent`, `inputs`. The runner fills `{{issue}}`, `{{plan}}`, `{{lessons}}`, `{{failure}}` and `{{diff}}` |
 | `app/todo.py`, `app/test_todo.py` | the product the graph maintains. It starts with `add` and `list` only |
 | `issues/*.md` | three work items, each with acceptance lines |
 | `run.py` | walks the graph for one issue. Every agent node is a fresh `kiro-cli chat --no-interactive` process |
 | `lessons.md` | what the runs taught. Read by plan, build and fix, mined by the gardener |
 | `runs/*.json` | one record per run: nodes visited, loops, failures, verdicts, timings |
 | `gardener.py` | `propose`, `validate`, `apply` |
-| `proposals/<timestamp>/` | a proposed graph, its prompts, `report.md`, and a `VALIDATED` or `REJECTED` marker |
+| `proposals/<timestamp>/` | a proposed graph, its new `agents/*.md` and prompts, `report.md`, and a `VALIDATED` or `REJECTED` marker |
 | `fake_world.py` | scripted stand-ins for the agent nodes, so the mechanics run for free |
-| `ports/` | the same graph for Claude Code, Codex and Kiro Crew, written as skills, agent files and hooks |
+| `ports/` | the same graph for Claude Code, Codex and Kiro Crew. `ports/gen_agents.py` turns `agents/*.md` into each harness's agent format |
 
 ## The three ideas
 

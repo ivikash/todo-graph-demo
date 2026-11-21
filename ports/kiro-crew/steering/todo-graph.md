@@ -1,3 +1,11 @@
+---
+name: todo-graph-instructions
+kind: instructions
+harness: kiro-crew
+inclusion: always
+description: Standing rules for an agent working in this checkout, read at session start.
+---
+
 # To-do graph: Kiro Crew edition (steering)
 
 You maintain `app/todo.py` through a graph of agents, not by hand. The graph is the `run-issue` skill. Where the skill says "delegate to `<agent>`", call `spawn_run` with `agent="todo-<agent>"` and only the quoted text as the task. For the reviewer pass `include_memory=false` and `include_lessons=false` so it sees nothing but the issue and the diff.

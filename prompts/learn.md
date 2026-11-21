@@ -1,3 +1,10 @@
+---
+name: learn
+agent: scribe
+description: Write one lessons.md row, or NO LESSON.
+inputs: issue_title, loops, failures
+---
+
 You are the scribe node. The run below has finished. Read only.
 
 Issue: {{issue_title}}

@@ -1,3 +1,11 @@
+---
+name: lessons
+kind: memory
+description: One row per run that needed a fix pass or a review rejection.
+written_by: scribe (learn node)
+read_by: planner, coder, gardener
+---
+
 # Lessons
 
 Written by the `learn` node after any run that needed a fix loop or a review rejection.

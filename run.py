@@ -24,6 +24,8 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))
+from agents import load as load_agents, strip_frontmatter  # noqa: E402
 
 
 def read(p):
@@ -36,7 +38,7 @@ def lessons_rows(path):
 
 
 def render(prompts_dir, name, **kw):
-    text = read(prompts_dir / f"{name}.md")
+    text = strip_frontmatter(read(prompts_dir / f"{name}.md"))
     for k, v in kw.items():
         text = text.replace("{{" + k + "}}", str(v))
     return text
@@ -60,10 +62,11 @@ def diff_since(app, before):
 
 
 def real_llm(agent_def, prompt, cwd, timeout=600):
+    """One fresh process per node. The agent file's body is its standing instruction, the node prompt follows."""
     cmd = ["kiro-cli", "chat", "--no-interactive"]
-    if "write" in agent_def.get("tools", []):
+    if "write" in agent_def["tools"]:
         cmd.append("--trust-all-tools")
-    cmd.append(prompt)
+    cmd.append(agent_def["body"] + "\n\n" + prompt)
     p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
     out = (p.stdout + p.stderr).strip()
     if p.returncode != 0 or "Not logged in" in out or not out:
@@ -79,11 +82,19 @@ def main():
     ap.add_argument("--runs", default=ROOT / "runs")
     ap.add_argument("--lessons", default=ROOT / "lessons.md")
     ap.add_argument("--prompts", default=ROOT / "prompts")
+    ap.add_argument("--agents", default=ROOT / "agents", help="directory of agent markdown files")
+    ap.add_argument("--extra-agents", default=None, help="a second agents dir layered on top (a proposal's)")
     ap.add_argument("--fake", action="store_true", help="deterministic stand-ins, no LLM calls")
     ap.add_argument("--quiet", action="store_true")
     a = ap.parse_args()
 
     graph = json.loads(read(a.graph))
+    agents = load_agents(a.agents)
+    if a.extra_agents and Path(a.extra_agents).is_dir():
+        agents.update(load_agents(a.extra_agents))
+    missing = {spec["agent"] for spec in graph["nodes"].values()} - set(agents)
+    if missing:
+        sys.exit(f"graph names agents with no file in {a.agents}: {sorted(missing)}")
     app, runs_dir, prompts = Path(a.app), Path(a.runs), Path(a.prompts)
     runs_dir.mkdir(exist_ok=True)
     issue_text = read(a.issue)
@@ -99,7 +110,7 @@ def main():
         from fake_world import fake_llm
         llm = lambda node, agent, prompt: fake_llm(node, agent, state, app)
     else:
-        llm = lambda node, agent, prompt: real_llm(graph["agents"][agent], prompt, app)
+        llm = lambda node, agent, prompt: real_llm(agents[agent], prompt, app)
 
     node = graph["start"]
     while node:
@@ -109,7 +120,7 @@ def main():
         log(f"\n== {node} ({agent})")
         nxt, note = spec.get("next"), ""
 
-        if agent == "runner":
+        if agents[agent]["kind"] == "script":
             ok, out = run_tests(app)
             note = out.splitlines()[-1] if out else ""
             if node == "verify":

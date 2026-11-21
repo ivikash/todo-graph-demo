@@ -1,3 +1,10 @@
+---
+name: todo-graph-instructions
+kind: instructions
+harness: claude-code
+description: Standing rules for an agent working in this checkout, read at session start.
+---
+
 # To-do graph: Claude Code edition
 
 You maintain `app/todo.py` through a graph of subagents, not by hand. The graph is the `run-issue` skill. Hooks run the tests after every edit and refuse to let you stop while red; you do not need to be told to verify.

@@ -1,21 +1,38 @@
 {
   "version": 1,
-  "description": "A to-do API maintained by a graph of agents. Nodes are units of work, edges carry pass/fail, loops carry failures back to a fixer.",
-  "agents": {
-    "planner":  {"tools": ["read"], "purpose": "turn an issue into a numbered plan"},
-    "coder":    {"tools": ["read", "write", "run_tests"], "purpose": "edit app/todo.py and app/test_todo.py"},
-    "runner":   {"tools": ["run_tests"], "purpose": "run the test suite, nothing else"},
-    "reviewer": {"tools": ["read"], "fresh_context": true, "purpose": "judge the diff against the issue with no memory of how it was built"},
-    "scribe":   {"tools": ["read", "append_lessons"], "purpose": "write what the run taught us"}
-  },
+  "description": "A to-do API maintained by a graph of agents. Nodes are units of work, edges carry pass/fail, loops carry failures back to a fixer. Agents are the markdown files in agents/.",
   "start": "plan",
   "nodes": {
-    "plan":   {"agent": "planner",  "next": "build"},
-    "build":  {"agent": "coder",    "next": "verify"},
-    "verify": {"agent": "runner",   "pass": "review", "fail": "fix"},
-    "fix":    {"agent": "coder",    "next": "verify", "max_loops": 3},
-    "review": {"agent": "reviewer", "pass": "ship", "fail": "fix"},
-    "ship":   {"agent": "runner",   "next": "learn"},
-    "learn":  {"agent": "scribe",   "next": null}
+    "plan": {
+      "agent": "planner",
+      "next": "build"
+    },
+    "build": {
+      "agent": "coder",
+      "next": "verify"
+    },
+    "verify": {
+      "agent": "runner",
+      "pass": "review",
+      "fail": "fix"
+    },
+    "fix": {
+      "agent": "coder",
+      "next": "verify",
+      "max_loops": 3
+    },
+    "review": {
+      "agent": "reviewer",
+      "pass": "ship",
+      "fail": "fix"
+    },
+    "ship": {
+      "agent": "runner",
+      "next": "learn"
+    },
+    "learn": {
+      "agent": "scribe",
+      "next": null
+    }
   }
 }

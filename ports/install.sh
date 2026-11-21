@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Wire one harness into THIS checkout. Run from the repo root in your own terminal:
 #   bash ports/install.sh claude-code | codex | kiro-crew
-# Copies the shared skills and scripts into place and the harness-specific files to
+# Copies the shared skills and scripts into place, generates the harness's agent files
+# from agents/*.md (the one source of truth), and copies the harness-specific files to
 # the paths that harness reads. Nothing outside this checkout is touched except
 # where noted for Kiro Crew.
 set -euo pipefail
@@ -17,7 +18,7 @@ touch runs.log
 case "$H" in
   claude-code)
     mkdir -p .claude/agents .claude/skills
-    cp ports/claude-code/.claude/agents/*.md .claude/agents/
+    python3 ports/gen_agents.py claude-code .claude/agents
     cp -r ports/shared/skills/run-issue ports/shared/skills/gardener .claude/skills/
     cp ports/claude-code/claude-settings.template.json .claude/settings.json
     cp ports/claude-code/CLAUDE.md CLAUDE.md
@@ -25,7 +26,7 @@ case "$H" in
     echo "Claude Code wired. Try:  claude  then  'use the run-issue skill on issues/001-complete-item.md'   or   ./loop.sh issues" ;;
   codex)
     mkdir -p .codex/agents .codex/skills
-    cp ports/codex/agents/*.toml .codex/agents/
+    python3 ports/gen_agents.py codex .codex/agents
     cp -r ports/shared/skills/run-issue ports/shared/skills/gardener .codex/skills/
     cp ports/codex/codex-hooks.template.json .codex/hooks.json
     cp ports/codex/AGENTS.md AGENTS.md
@@ -33,7 +34,7 @@ case "$H" in
     echo "Codex wired. Start 'codex' once, run /hooks and trust the three hooks, then ./loop.sh issues" ;;
   kiro-crew)
     mkdir -p .kiro/agents .kiro/steering
-    cp ports/kiro-crew/agents/*.json .kiro/agents/
+    python3 ports/gen_agents.py kiro-crew .kiro/agents
     cp ports/kiro-crew/steering/todo-graph.md .kiro/steering/
     SK="${KIROCREW_HOME:-$HOME/.kiro/crew}/skills"
     mkdir -p "$SK"

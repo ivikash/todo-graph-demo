@@ -5,12 +5,12 @@
 | Primitive | What it carries here | Claude Code | Codex | Kiro Crew / Kiro CLI |
 |---|---|---|---|---|
 | Instructions file | the self-improvement loop rules | `CLAUDE.md` | `AGENTS.md` | `.kiro/steering/todo-graph.md` |
-| Agent definitions | who may do what (tool sets, model) | `.claude/agents/*.md` (frontmatter `tools`, `model`) | `.codex/agents/*.toml` (`name`, `description`, `developer_instructions`, `model`) | `.kiro/agents/*.json` (`tools`, `allowedTools`, `hooks`) |
+| Agent definitions | who may do what (tool sets, model). One source: `agents/*.md`. `ports/gen_agents.py` emits each harness's format | `.claude/agents/*.md` (frontmatter `tools`, `model`) | `.codex/agents/*.toml` (`name`, `description`, `developer_instructions`, `model`) | `.kiro/agents/*.json` (`tools`, `allowedTools`, `hooks`) |
 | Skill | the graph itself, as numbered nodes | `.claude/skills/run-issue/SKILL.md` | `.codex/skills/run-issue/SKILL.md` | linked into `~/.kiro/crew/skills/` |
 | Hooks | the hard edges: tests after every edit, no stopping while red | `.claude/settings.json` `PostToolUse` + `Stop`, exit 2 blocks | `.codex/hooks.json` same events, exit 2 blocks, trust once via `/hooks` | `postToolUse` on the coder agent JSON; verify/stop stays in the skill (Kiro CLI hook event names TO BE CONFIRMED against your build) |
 | Headless run | the outer loop nobody prompts | `claude -p "..."` in `loop.sh` | `codex exec --full-auto "..."` in `loop.sh` | `cron_add` + `spawn_run(agent=...)` |
 
-Shared across all three (`ports/shared/`): the two skills, `verify.sh`, the two hook scripts, `validate_proposal.py`, and a `lessons.md` template. Only the thin wiring differs per harness.
+Shared across all three: the agent files in `agents/` (generated into each harness's format by `ports/gen_agents.py`), and under `ports/shared/` the two skills, `verify.sh`, the two hook scripts, `validate_proposal.py`, and a `lessons.md` template. Only the thin wiring differs per harness.
 
 ## Install into your checkout
 

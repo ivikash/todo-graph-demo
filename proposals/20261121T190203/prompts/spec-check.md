@@ -1,3 +1,10 @@
+---
+name: spec-check
+agent: spec-checker
+description: Map every acceptance line to a named test before any code is written.
+inputs: issue, plan
+---
+
 You are the spec-check node. Read only.
 
 Issue:

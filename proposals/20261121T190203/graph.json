@@ -1,48 +1,6 @@
 {
   "version": 1,
   "description": "A to-do API maintained by a graph of agents. Nodes are units of work, edges carry pass/fail, loops carry failures back to a fixer.",
-  "agents": {
-    "planner": {
-      "tools": [
-        "read"
-      ],
-      "purpose": "turn an issue into a numbered plan"
-    },
-    "coder": {
-      "tools": [
-        "read",
-        "write",
-        "run_tests"
-      ],
-      "purpose": "edit app/todo.py and app/test_todo.py"
-    },
-    "runner": {
-      "tools": [
-        "run_tests"
-      ],
-      "purpose": "run the test suite, nothing else"
-    },
-    "reviewer": {
-      "tools": [
-        "read"
-      ],
-      "fresh_context": true,
-      "purpose": "judge the diff against the issue with no memory of how it was built"
-    },
-    "scribe": {
-      "tools": [
-        "read",
-        "append_lessons"
-      ],
-      "purpose": "write what the run taught us"
-    },
-    "spec-checker": {
-      "tools": [
-        "read"
-      ],
-      "purpose": "map every acceptance line to a named test before any code is written"
-    }
-  },
   "start": "plan",
   "nodes": {
     "plan": {

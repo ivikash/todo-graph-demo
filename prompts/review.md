@@ -1,3 +1,10 @@
+---
+name: review
+agent: reviewer
+description: Judge the diff against the issue with no build context, end with VERDICT.
+inputs: issue, diff
+---
+
 You are the reviewer node. You have no memory of how this change was built; judge only what is in front of you. Read only, do not edit files.
 
 Issue:

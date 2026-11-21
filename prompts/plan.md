@@ -1,3 +1,10 @@
+---
+name: plan
+agent: planner
+description: Turn one issue into a numbered plan, one test per acceptance line.
+inputs: issue, lessons
+---
+
 You are the planner node of a to-do API maintenance graph. Read only, do not edit files.
 
 Issue:

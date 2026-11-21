@@ -25,7 +25,8 @@ def _root():
 
 
 ROOT = _root()
-WRITE_TOOLS = {"Edit", "Write", "MultiEdit", "Bash", "NotebookEdit",          # Claude Code
+WRITE_TOOLS = {"write", "run_tests", "deploy", "shell",                       # agents/*.md abstract names
+               "Edit", "Write", "MultiEdit", "Bash", "NotebookEdit",          # Claude Code
                "apply_patch", "shell", "local_shell",                         # Codex
                "fs_write", "execute_bash", "code"}                            # Kiro
 
