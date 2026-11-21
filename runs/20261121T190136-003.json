@@ -1,0 +1,80 @@
+{
+  "issue": "003-list-filter.md",
+  "graph": "graph.json",
+  "fake": true,
+  "date": "2026-11-21",
+  "loops": 1,
+  "failures": [
+    {
+      "node": "review",
+      "kind": "review",
+      "detail": "acceptance line 'still returns copies' is untested"
+    }
+  ],
+  "tests_green": true,
+  "trace": [
+    {
+      "node": "plan",
+      "agent": "planner",
+      "secs": 0.0,
+      "note": "3. Keep existing tests green.",
+      "next": "build"
+    },
+    {
+      "node": "build",
+      "agent": "coder",
+      "secs": 0.0,
+      "note": "list(done=None) filter; added tests.",
+      "next": "verify"
+    },
+    {
+      "node": "verify",
+      "agent": "runner",
+      "secs": 0.04,
+      "note": "OK",
+      "next": "review"
+    },
+    {
+      "node": "review",
+      "agent": "reviewer",
+      "secs": 0.0,
+      "note": "VERDICT: FAIL acceptance line 'still returns copies' is untested",
+      "next": "fix"
+    },
+    {
+      "node": "fix",
+      "agent": "coder",
+      "secs": 0.0,
+      "note": "Added the missing copy-semantics test.",
+      "next": "verify"
+    },
+    {
+      "node": "verify",
+      "agent": "runner",
+      "secs": 0.04,
+      "note": "OK",
+      "next": "review"
+    },
+    {
+      "node": "review",
+      "agent": "reviewer",
+      "secs": 0.0,
+      "note": "VERDICT: PASS",
+      "next": "ship"
+    },
+    {
+      "node": "ship",
+      "agent": "runner",
+      "secs": 0.04,
+      "note": "OK",
+      "next": "learn"
+    },
+    {
+      "node": "learn",
+      "agent": "scribe",
+      "secs": 0.0,
+      "note": "| 2026-11-21 | untested-acceptance-line | One acceptance line shipped without a test and only the reviewer caught it. | Map every acceptance line to a named test before writing code. |",
+      "next": null
+    }
+  ]
+}

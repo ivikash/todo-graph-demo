@@ -1,0 +1,73 @@
+{
+  "issue": "001-complete-item.md",
+  "graph": "graph.json",
+  "fake": true,
+  "date": "2026-11-21",
+  "loops": 1,
+  "failures": [
+    {
+      "node": "verify",
+      "kind": "tests",
+      "detail": "======================================================================\nFAIL: test_complete_missing_raises (test_todo.TestTodo)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"app/test_todo.py\", line 34, in test_complete_missing_raises\n    s.complete(42)\nAssertionError: KeyError not raised\n\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nFAILED (failures=1)"
+    }
+  ],
+  "tests_green": true,
+  "trace": [
+    {
+      "node": "plan",
+      "agent": "planner",
+      "secs": 0.0,
+      "note": "3. Keep existing tests green.",
+      "next": "build"
+    },
+    {
+      "node": "build",
+      "agent": "coder",
+      "secs": 0.0,
+      "note": "Added complete(); added 3 tests.",
+      "next": "verify"
+    },
+    {
+      "node": "verify",
+      "agent": "runner",
+      "secs": 0.05,
+      "note": "FAILED (failures=1)",
+      "next": "fix"
+    },
+    {
+      "node": "fix",
+      "agent": "coder",
+      "secs": 0.0,
+      "note": "complete() now raises KeyError for unknown ids and returns a copy.",
+      "next": "verify"
+    },
+    {
+      "node": "verify",
+      "agent": "runner",
+      "secs": 0.04,
+      "note": "OK",
+      "next": "review"
+    },
+    {
+      "node": "review",
+      "agent": "reviewer",
+      "secs": 0.0,
+      "note": "VERDICT: PASS",
+      "next": "ship"
+    },
+    {
+      "node": "ship",
+      "agent": "runner",
+      "secs": 0.04,
+      "note": "OK",
+      "next": "learn"
+    },
+    {
+      "node": "learn",
+      "agent": "scribe",
+      "secs": 0.0,
+      "note": "| 2026-11-21 | missing-error-path | Implemented the happy path and skipped the 'raises when missing' acceptance line. | Before building, list every acceptance line that names an exception and write it",
+      "next": null
+    }
+  ]
+}
