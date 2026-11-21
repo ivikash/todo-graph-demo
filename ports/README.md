@@ -48,5 +48,5 @@ Everything else (agent prompts, the graph, the lessons, the gardener's judgment)
 ## Honest gaps
 
 - Hook matcher strings for Codex (`apply_patch`) and Kiro CLI (`postToolUse` / `fs_write`) were taken from the current docs and agent files, not executed here (TO BE CONFIRMED on your machine with `/hooks` and `kiro-cli agent validate`).
-- `install.sh` ran clean for all three in a scratch clone; the hooks were exercised directly (exit 2 on red, 0 on green, 0 on non-app edits). No live model run was made from this sandbox.
-- The gardener on these ports proposes in prose and writes agent files; its judgment is a model's. `validate_proposal.py` is what keeps that safe, not the prompt.
+- `install.sh` ran clean for all three in a scratch clone. The hooks were exercised directly (exit 2 on red, 0 on green, 0 on non-app edits). No live model run was made from this sandbox.
+- The gardener on these ports proposes in prose and writes agent files, so its judgment is a model's. `validate_proposal.py` is what keeps that safe, not the prompt.
