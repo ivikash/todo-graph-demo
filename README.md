@@ -4,6 +4,14 @@ A graph of seven agents maintains a small to-do API, and a slower loop grows the
 
 The pattern follows Boris Cherny's claim that loops, not prompts, drive agents ([TechCrunch, 2026-06-22](https://techcrunch.com/2026/06/22/the-ai-world-is-getting-loopy)). Here the unit of control is `graph.json`, 30 lines of data, and 4 of the 7 nodes are agents. The other 3 are plain code, because tests and permission checks are not things a model gets a vote on.
 
+## Demo
+
+25 seconds, every line on screen is real output from the runs in this repo: issue 001 fails, the fix loop closes it, the reviewer passes it, the scribe writes a lesson, the gardener proposes a new agent and the validator lets it through.
+
+![demo: the graph runs issue 001, then the gardener grows the graph](docs/demo.gif)
+
+With sound, as MP4: [docs/demo.mp4](docs/demo.mp4) (1920x1080, 1.6 MB). Poster frame: [docs/demo-poster.jpg](docs/demo-poster.jpg).
+
 ## Get started
 
 You need Python 3.9 or newer. There are no other dependencies. Fake mode runs the whole loop with scripted stand-ins for the agents, so it costs no tokens and gives the same result every time.
