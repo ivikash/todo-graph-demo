@@ -128,6 +128,14 @@ The gardener read those and proposed a **new agent** `spec-checker` (read-only) 
 - Replay uses fake mode. For real agents, replay would re-run held-out issues with live agents and compare loop counts, which costs tokens.
 - Lessons are one flat table. At scale you want the tag counts and the "which lesson fired on which run" join that lets the gardener retire a lesson once its node exists.
 
+## Run it on your own harness, mostly in markdown
+
+`run.py` is only a stand-in for a harness. [`ports/`](ports/README.md) wires the same graph into Claude Code, Codex and Kiro Crew using their native primitives (instructions file, agent definitions, skills, hooks, headless run), with the two skills and the gate scripts shared:
+
+```bash
+bash ports/install.sh claude-code    # or: codex | kiro-crew
+```
+
 ## Map to a real harness
 
 | Here | In a real setup (Kiro Crew / Claude Code / [vstack](https://github.com/ivikash/vstack)) |

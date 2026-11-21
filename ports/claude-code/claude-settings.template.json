@@ -1,0 +1,27 @@
+{
+  "_comment": "install.sh copies this to .claude/settings.json in your checkout. Hooks are the hard edges of the graph: exit 2 blocks and shows stderr to Claude.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "cat lessons.md" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "bash scripts/post_edit_gate.sh" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash scripts/stop_gate.sh" }
+        ]
+      }
+    ]
+  }
+}

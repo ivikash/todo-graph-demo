@@ -1,0 +1,28 @@
+{
+  "description": "install.sh copies this to .codex/hooks.json. Trust it once with /hooks in the CLI (or pass --dangerously-bypass-hook-trust to codex exec in loop.sh). Event names from the Codex hooks doc; the PostToolUse matcher string for apply_patch is TO BE CONFIRMED against your Codex build with /hooks.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          { "type": "command", "command": "cat lessons.md" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "apply_patch",
+        "hooks": [
+          { "type": "command", "command": "bash scripts/post_edit_gate.sh" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash scripts/stop_gate.sh" }
+        ]
+      }
+    ]
+  }
+}
